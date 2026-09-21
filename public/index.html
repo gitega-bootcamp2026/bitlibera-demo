@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BitLibera - Test Atelier Blink API</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #000; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: #121212; padding: 25px; border-radius: 16px; width: 420px; border: 1px solid #222; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        h2 { color: #FF7500; text-align: center; margin-bottom: 20px; font-size: 22px; }
+        .section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #222; }
+        label { font-size: 13px; color: #aaa; display: block; margin-bottom: 5px; }
+        input, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; box-sizing: border-box; font-size: 14px; }
+        input:focus { border-color: #FF7500; outline: none; }
+        button { background: #FF7500; border: none; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #e06800; }
+        pre { background: #1a1a1a; padding: 12px; border-radius: 6px; font-size: 11px; overflow-x: auto; color: #00ffcc; border: 1px solid #333; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>⚡ Blink API Tester</h2>
+
+        <!-- 1. Créer une facture -->
+        <div class="section">
+            <label>1. Générer une facture Lightning (Receive)</label>
+            <input type="number" id="invoiceAmount" placeholder="Montant en Satoshis (ex: 1000)">
+            <input type="text" id="invoiceMemo" placeholder="Mémo (ex: Café Bootcamp)">
+            <button onclick="createInvoice()">Créer la facture</button>
+        </div>
+
+        <!-- 2. Vérifier le statut -->
+        <div class="section">
+            <label>2. Vérifier le statut de la facture (Polling)</label>
+            <input type="text" id="checkPaymentRequest" placeholder="Coller le paymentRequest ici...">
+            <button onclick="checkStatus()">Vérifier le statut</button>
+        </div>
+
+        <!-- 3. Envoyer des sats -->
+        <div class="section">
+            <label>3. Envoyer vers une Adresse Lightning (Send)</label>
+            <input type="text" id="sendAddress" placeholder="Adresse (ex: user@blink.sv)">
+            <input type="number" id="sendAmount" placeholder="Montant en Sats">
+            <button onclick="sendPayment()">Envoyer les Sats</button>
+        </div>
+
+        <!-- Console de résultat -->
+        <div>
+            <label>Console de Réponse :</label>
+            <pre id="resultOutput">Prêt pour les tests...</pre>
+        </div>
+    </div>
+
+    <script>
+        async function createInvoice() {
+            const amountSats = document.getElementById('invoiceAmount').value;
+            const memo = document.getElementById('invoiceMemo').value;
+            
+            const res = await fetch('/api/blink/create-invoice', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amountSats, memo })
+            });
+            const data = await res.json();
+            document.getElementById('resultOutput').innerText = JSON.stringify(data, null, 2);
+            
+            if(data.success) {
+                document.getElementById('checkPaymentRequest').value = data.paymentRequest;
+            }
+        }
+
+        async function checkStatus() {
+            const paymentRequest = document.getElementById('checkPaymentRequest').value;
+            
+            const res = await fetch('/api/blink/check-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ paymentRequest })
+            });
+            const data = await res.json();
+            document.getElementById('resultOutput').innerText = JSON.stringify(data, null, 2);
+        }
+
+        async function sendPayment() {
+            const lnAddress = document.getElementById('sendAddress').value;
+            const amountSats = document.getElementById('sendAmount').value;
+            
+            const res = await fetch('/api/blink/send-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lnAddress, amountSats })
+            });
+            const data = await res.json();
+            document.getElementById('resultOutput').innerText = JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
