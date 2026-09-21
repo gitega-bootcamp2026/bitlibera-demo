@@ -3,9 +3,9 @@
 Ce projet est un serveur de test développé en **Node.js (Express)** pour explorer et tester les fonctionnalités de l'API **Blink** (Réseau Lightning de Bitcoin) dans le cadre de nos ateliers pratiques.
 
 ## 🚀 Fonctionnalités
-* **Génération de factures Lightning (Receive)** : Crée une facture BOLT11 avec un montant en Satoshis et un mémo personnalisé[cite: 6].
-* **Vérification du statut (Polling)** : Permet de vérifier en direct si une facture a été payée[cite: 6].
-* **Envoi de sats (Send)** : Permet d'envoyer des satoshis vers une adresse Lightning valide (`user@blink.sv`)[cite: 7].
+* **Génération de factures Lightning (Receive)** : Crée une facture BOLT11 avec un montant en Satoshis et un mémo personnalisé
+* **Vérification du statut (Polling)** : Permet de vérifier en direct si une facture a été payée
+* **Envoi de sats (Send)** : Permet d'envoyer des satoshis vers une adresse Lightning valide (`user@blink.sv`)
 
 ---
 
@@ -16,3 +16,4 @@ Ce projet est un serveur de test développé en **Node.js (Express)** pour explo
 3. Installe les dépendances nécessaires en exécutant dans ton terminal :
    ```bash
    npm install
+   
