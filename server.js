@@ -16,12 +16,12 @@ const BLINK_API_URL = 'https://api.blink.sv/graphql';
 const BLINK_API_KEY = process.env.BLINK_API_KEY || ''; 
 const DEFAULT_WALLET_ID = process.env.BLINK_WALLET_ID || ''; 
 
-// ROUTE DE SÉCOURS (Optionnelle si public/index.html est bien configuré)
+// ROUTE DE SÉCOURS
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
 
-// 1. ROUTE : Créer une facture Lightning (Invoice)[cite: 6]
+// 1. ROUTE : Créer une facture Lightning (Invoice)
 app.post('/api/blink/create-invoice', async (req, res) => {
     try {
         const { amountSats, memo } = req.body;
@@ -68,7 +68,7 @@ app.post('/api/blink/create-invoice', async (req, res) => {
     }
 });
 
-// 2. ROUTE : Vérifier le statut d'une facture (Polling)[cite: 6]
+// 2. ROUTE : Vérifier le statut d'une facture (Polling)
 app.post('/api/blink/check-status', async (req, res) => {
     try {
         const { paymentRequest } = req.body;
@@ -94,7 +94,7 @@ app.post('/api/blink/check-status', async (req, res) => {
     }
 });
 
-// 3. ROUTE : Envoyer des sats vers une adresse Lightning[cite: 7]
+// 3. ROUTE : Envoyer des sats vers une adresse Lightning
 app.post('/api/blink/send-payment', async (req, res) => {
     try {
         const { lnAddress, amountSats } = req.body;
@@ -139,7 +139,7 @@ app.post('/api/blink/send-payment', async (req, res) => {
     }
 });
 
-// 4. ROUTE : Obtenir le taux de change du Bitcoin[cite: 6]
+// 4. ROUTE : Obtenir le taux de change du Bitcoin
 app.get('/api/blink/rate', async (req, res) => {
     try {
         const query = `
@@ -165,6 +165,7 @@ app.get('/api/blink/rate', async (req, res) => {
     }
 });
 
+// 5. ROUTE : Récupérer l'ID du wallet par défaut via le nom d'utilisateur
 app.post('/api/blink/get-wallet', async (req, res) => {
     try {
         const { username } = req.body;
@@ -198,6 +199,7 @@ app.post('/api/blink/get-wallet', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
+
 // Démarrage du serveur
 app.listen(PORT, () => {
     console.log(`Serveur Blink démarré sur http://localhost:${PORT}`);
