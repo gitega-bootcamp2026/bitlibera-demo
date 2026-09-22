@@ -165,6 +165,30 @@ app.get('/api/blink/rate', async (req, res) => {
     }
 });
 
+async function getAccountDefaultWallet(username) {
+    const query = `
+        query Query($username: Username!) {
+            accountDefaultWallet(username: $username) {
+                id
+                currency
+            }
+        }
+    `;
+    const variables = { username: username };
+    
+    const response = await fetch('[https://api.blink.sv/graphql](https://api.blink.sv/graphql)', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, variables })
+    });
+    
+    const data = await response.json();
+    if (data.errors) {
+        throw new Error(data.errors[0].message || 'Erreur lors de la récupération du wallet');
+    }
+    
+    return data.data.accountDefaultWallet;
+}
 // Démarrage du serveur
 app.listen(PORT, () => {
     console.log(`Serveur Blink démarré sur http://localhost:${PORT}`);
