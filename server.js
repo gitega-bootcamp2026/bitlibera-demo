@@ -7,19 +7,27 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Servir automatiquement les fichiers statiques du dossier 'public' (comme index.html)
+// Servir automatiquement les fichiers statiques du dossier 'public'
 app.use(express.static('public'));
 
-// Configuration de base (depuis les variables d'environnement)
+// Configuration de base (Variables d'environnement)
 const PORT = process.env.PORT || 3000;
 const BLINK_API_URL = 'https://api.blink.sv/graphql';
 const BLINK_API_KEY = process.env.BLINK_API_KEY || ''; 
 const DEFAULT_WALLET_ID = process.env.BLINK_WALLET_ID || ''; 
 
+// Configuration BitLibera Gateway
+const BITLIBERA_BASE_URL = 'https://exchanger.bitlibera.com';
+const BITLIBERA_API_KEY = process.env.BITLIBERA_API_KEY || '';
+
 // ROUTE DE SÉCOURS
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
+
+// ==========================================
+// ROUTES BLINK API
+// ==========================================
 
 // 1. ROUTE : Créer une facture Lightning (Invoice)
 app.post('/api/blink/create-invoice', async (req, res) => {
@@ -200,7 +208,63 @@ app.post('/api/blink/get-wallet', async (req, res) => {
     }
 });
 
+
+// ==========================================
+// ROUTES BITLIBERA GATEWAY (API v1)
+// ==========================================
+
+const callBitliberaAPI = async (method, endpoint, data = null) => {
+    try {
+        const config = {
+            method: method,
+            url: `${BITLIBERA_BASE_URL}${endpoint}`,
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': BITLIBERA_API_KEY
+            }
+        };
+        if (data) config.data = data;
+        
+        const response = await axios(config);
+        return { success: true, data: response.data };
+    } catch (error) {
+        return { 
+            success: false, 
+            status: error.response?.status || 500, 
+            error: error.response?.data || error.message 
+        };
+    }
+};
+
+// 1. On-Ramp : Émission de l'OTP SMS Lumicash
+app.post('/api/v1/onramp/request-otp', async (req, res) => {
+    const result = await callBitliberaAPI('POST', '/api/v1/onramp/request-otp', req.body);
+    if (!result.success) return res.status(result.status).json(result.error);
+    res.json(result.data);
+});
+
+// 2. On-Ramp : Validation OTP & Débit Lumicash
+app.post('/api/v1/onramp/execute', async (req, res) => {
+    const result = await callBitliberaAPI('POST', '/api/v1/onramp/execute', req.body);
+    if (!result.success) return res.status(result.status).json(result.error);
+    res.json(result.data);
+});
+
+// 3. Off-Ramp : Générer une facture Lightning BOLT11
+app.post('/api/v1/offramp/create-invoice', async (req, res) => {
+    const result = await callBitliberaAPI('POST', '/api/v1/offramp/create-invoice', req.body);
+    if (!result.success) return res.status(result.status).json(result.error);
+    res.json(result.data);
+});
+
+// 4. Vérifier le statut d'une commande en direct
+app.get('/api/v1/orders/:orderId', async (req, res) => {
+    const result = await callBitliberaAPI('GET', `/api/v1/orders/${req.params.orderId}`);
+    if (!result.success) return res.status(result.status).json(result.error);
+    res.json(result.data);
+});
+
 // Démarrage du serveur
 app.listen(PORT, () => {
-    console.log(`Serveur Blink démarré sur http://localhost:${PORT}`);
+    console.log(`Serveur démarré sur http://localhost:${PORT}`);
 });

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BitLibera Gateway - Test API Réelle v1</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #0b0f19; color: #f3f4f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: #111827; padding: 30px; border-radius: 16px; width: 520px; border: 1px solid #1f2937; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        h2 { color: #f59e0b; text-align: center; margin-bottom: 5px; font-size: 24px; }
+        .subtitle { text-align: center; font-size: 11px; color: #9ca3af; margin-bottom: 20px; }
+        .section { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #1f2937; }
+        label { font-size: 12px; color: #9ca3af; display: block; margin-bottom: 4px; font-weight: bold; }
+        input, button { width: 100%; padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #374151; background: #1f2937; color: #fff; box-sizing: border-box; font-size: 13px; }
+        input:focus { border-color: #f59e0b; outline: none; }
+        button { background: #f59e0b; color: #111827; border: none; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #d97706; }
+        pre { background: #030712; padding: 10px; border-radius: 6px; font-size: 11px; overflow-x: auto; color: #34d399; border: 1px solid #1f2937; margin-top: 5px; max-height: 180px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>⚡ BitLibera Gateway</h2>
+        <div class="subtitle">Test des APIs réelles (Clé gérée par le serveur .env)</div>
+
+        <!-- 1. On-Ramp : Demande OTP -->
+        <div class="section">
+            <label>1. On-Ramp : Émission de l'OTP SMS Lumicash</label>
+            <input type="text" id="onrampPhone" placeholder="Numéro Lumicash (ex: 25769898947)">
+            <input type="number" id="onrampAmount" placeholder="Montant en BIF (ex: 2000)">
+            <button onclick="requestOtp()">Demander l'OTP</button>
+        </div>
+
+        <!-- 2. On-Ramp : Exécution / Validation OTP -->
+        <div class="section">
+            <label>2. On-Ramp : Validation OTP & Débit Lumicash</label>
+            <input type="text" id="execPhone" placeholder="Numéro de téléphone débité">
+            <input type="number" id="execAmount" placeholder="Montant exact en BIF">
+            <input type="text" id="execOtp" placeholder="Code secret SMS à 6 chiffres">
+            <input type="text" id="execOrder" placeholder="Référence unique de commande (ex: ORDER_002)">
+            <button onclick="executeOnramp()">Valider et Débiter</button>
+        </div>
+
+        <!-- 3. Off-Ramp : Création de Facture -->
+        <div class="section">
+            <label>3. Off-Ramp : Générer une facture Lightning BOLT11</label>
+            <input type="text" id="offPhone" placeholder="Numéro Lumicash destinataire">
+            <input type="number" id="offAmount" placeholder="Montant en BIF à verser (ex: 5000)">
+            <input type="text" id="offOrder" placeholder="Identifiant unique de transaction">
+            <button onclick="createOfframpInvoice()">Créer la Facture</button>
+        </div>
+
+        <!-- 4. Vérifier le statut d'une commande -->
+        <div class="section">
+            <label>4. Vérifier le statut d'une commande en direct</label>
+            <input type="text" id="checkOrderId" placeholder="Order ID (ex: OFFRAMP_ORDER_004)">
+            <button onclick="checkOrderStatus()">Vérifier le Statut</button>
+        </div>
+
+        <!-- Console de Résultat -->
+        <div>
+            <label>Console de Réponse API :</label>
+            <pre id="resultOutput">Prêt pour les requêtes...</pre>
+        </div>
+    </div>
+
+    <script>
+        async function requestOtp() {
+            try {
+                const phone = document.getElementById('onrampPhone').value;
+                const amount = Number(document.getElementById('onrampAmount').value);
+
+                const res = await fetch('/api/v1/onramp/request-otp', {
+                    method: 'POST',
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phone, amount })
+                });
+                const data = await res.json();
+                document.getElementById('resultOutput').innerText = JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('resultOutput').innerText = "Erreur: " + e.message;
+            }
+        }
+
+        async function executeOnramp() {
+            try {
+                const phone = document.getElementById('execPhone').value;
+                const amount = Number(document.getElementById('execAmount').value);
+                const otp = document.getElementById('execOtp').value;
+                const order_id = document.getElementById('execOrder').value;
+
+                const res = await fetch('/api/v1/onramp/execute', {
+                    method: 'POST',
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phone, amount, otp, order_id })
+                });
+                const data = await res.json();
+                document.getElementById('resultOutput').innerText = JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('resultOutput').innerText = "Erreur: " + e.message;
+            }
+        }
+
+        async function createOfframpInvoice() {
+            try {
+                const recipient_phone = document.getElementById('offPhone').value;
+                const amount_bif = Number(document.getElementById('offAmount').value);
+                const order_id = document.getElementById('offOrder').value;
+
+                const res = await fetch('/api/v1/offramp/create-invoice', {
+                    method: 'POST',
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ recipient_phone, amount_bif, order_id })
+                });
+                const data = await res.json();
+                document.getElementById('resultOutput').innerText = JSON.stringify(data, null, 2);
+                
+                if (data.success && data.order_id) {
+                    document.getElementById('checkOrderId').value = data.order_id;
+                }
+            } catch (e) {
+                document.getElementById('resultOutput').innerText = "Erreur: " + e.message;
+            }
+        }
+
+        async function checkOrderStatus() {
+            try {
+                const orderId = document.getElementById('checkOrderId').value;
+
+                const res = await fetch(`/api/v1/orders/${orderId}`, {
+                    method: 'GET'
+                });
+                const data = await res.json();
+                document.getElementById('resultOutput').innerText = JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('resultOutput').innerText = "Erreur: " + e.message;
+            }
+        }
+    </script>
+</body>
+</html>
