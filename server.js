@@ -165,30 +165,39 @@ app.get('/api/blink/rate', async (req, res) => {
     }
 });
 
-async function getAccountDefaultWallet(username) {
-    const query = `
-        query Query($username: Username!) {
-            accountDefaultWallet(username: $username) {
-                id
-                currency
+app.post('/api/blink/get-wallet', async (req, res) => {
+    try {
+        const { username } = req.body;
+
+        const query = `
+            query Query($username: Username!) {
+                accountDefaultWallet(username: $username) {
+                    id
+                    currency
+                }
             }
+        `;
+
+        const variables = { username: username };
+
+        const response = await axios.post(BLINK_API_URL, { query, variables }, {
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = response.data.data.accountDefaultWallet;
+        if (!data) {
+            return res.status(404).json({ success: false, error: "Utilisateur non trouvé ou wallet introuvable." });
         }
-    `;
-    const variables = { username: username };
-    
-    const response = await fetch('[https://api.blink.sv/graphql](https://api.blink.sv/graphql)', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, variables })
-    });
-    
-    const data = await response.json();
-    if (data.errors) {
-        throw new Error(data.errors[0].message || 'Erreur lors de la récupération du wallet');
+
+        res.json({
+            success: true,
+            walletId: data.id,
+            currency: data.currency
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
     }
-    
-    return data.data.accountDefaultWallet;
-}
+});
 // Démarrage du serveur
 app.listen(PORT, () => {
     console.log(`Serveur Blink démarré sur http://localhost:${PORT}`);
