@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101513">
+    <title>Connexion — BitLibera</title>
+    <style>
+        :root { color-scheme: dark; --bg: #101513; --panel: #171e1b; --line: #2a3530; --text: #f0f3ed; --muted: #929d95; --lime: #c5f36b; --orange: #ff9147; }
+        * { box-sizing: border-box; }
+        body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; color: var(--text); background-color: var(--bg); background-image: linear-gradient(#ffffff07 1px, transparent 1px), linear-gradient(90deg, #ffffff07 1px, transparent 1px); background-size: 44px 44px; font-family: 'Avenir Next', Avenir, sans-serif; }
+        .login-shell { width: min(420px, 100%); }
+        .brand { display: flex; align-items: center; gap: 10px; margin: 0 0 27px 3px; font-size: 19px; font-weight: 750; }
+        .brand-mark { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 8px; background: var(--lime); color: #182017; }
+        .brand-period { color: var(--orange); }
+        .login-panel { padding: clamp(23px, 6vw, 34px); border: 1px solid var(--line); border-radius: 5px; background: var(--panel); box-shadow: 0 24px 80px #0005; }
+        .eyebrow { color: #98a48d; font: 10px 'SFMono-Regular', Consolas, monospace; }
+        h1 { margin: 12px 0 7px; font-size: 27px; font-weight: 600; }
+        .intro { margin: 0 0 27px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+        label { display: block; margin: 17px 0 7px; color: #d8dfd8; font-size: 11px; font-weight: 600; }
+        input { width: 100%; height: 43px; padding: 0 12px; border: 1px solid #354139; border-radius: 3px; outline: none; background: #111714; color: var(--text); font: inherit; font-size: 13px; }
+        input:focus { border-color: #829b5b; box-shadow: 0 0 0 2px #c5f36b22; }
+        button { width: 100%; min-height: 43px; margin-top: 24px; border: 0; border-radius: 3px; background: var(--lime); color: #1b2418; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+        button:disabled { cursor: not-allowed; opacity: .48; }
+        .message { min-height: 20px; margin: 13px 0 0; color: #9ca79e; font-size: 10px; line-height: 1.6; }
+        .message.error { color: #ff9292; }
+        .message a { color: var(--lime); }
+        @media (prefers-reduced-motion: no-preference) { .login-panel { animation: arrive .35s ease both; } @keyframes arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } } }
+    </style>
+</head>
+<body>
+    <main class="login-shell">
+        <div class="brand"><span class="brand-mark">B</span><span>bitlibera<span class="brand-period">.</span></span></div>
+        <form class="login-panel" id="login-form">
+            <div class="eyebrow">ESPACE SÉCURISÉ</div>
+            <h1>Connexion</h1>
+            <p class="intro">Accédez à votre espace BitLibera Lightning Desk.</p>
+            <label for="username">Identifiant</label>
+            <input id="username" name="username" autocomplete="username" required autofocus>
+            <label for="password">Mot de passe</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+            <button id="submit-button" type="submit">Se connecter</button>
+            <p class="message" id="login-message" role="status" aria-live="polite"></p>
+        </form>
+    </main>
+    <script>
+        const form = document.querySelector('#login-form');
+        const message = document.querySelector('#login-message');
+        const submit = document.querySelector('#submit-button');
+
+        fetch('/api/auth/session').then((response) => response.json()).then((session) => {
+            if (session.authenticated) location.replace('/');
+            if (!session.configured) {
+                message.textContent = 'Configurez APP_USERNAME, APP_PASSWORD et APP_SESSION_SECRET dans .env, puis redémarrez le serveur.';
+                message.classList.add('error');
+                submit.disabled = true;
+            }
+        }).catch(() => {
+            message.textContent = 'Le serveur est indisponible.';
+            message.classList.add('error');
+        });
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            message.textContent = '';
+            message.classList.remove('error');
+            submit.disabled = true;
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: form.elements.username.value, password: form.elements.password.value })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Connexion impossible.');
+                location.replace('/');
+            } catch (error) {
+                message.textContent = error.message;
+                message.classList.add('error');
+                submit.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

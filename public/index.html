@@ -3,116 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BitLibera - Test Atelier Blink API</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #000; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background: #121212; padding: 25px; border-radius: 16px; width: 420px; border: 1px solid #222; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-        h2 { color: #FF7500; text-align: center; margin-bottom: 20px; font-size: 22px; }
-        .section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #222; }
-        label { font-size: 13px; color: #aaa; display: block; margin-bottom: 5px; }
-        input, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; box-sizing: border-box; font-size: 14px; }
-        input:focus { border-color: #FF7500; outline: none; }
-        button { background: #FF7500; border: none; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-        button:hover { background: #e06800; }
-        pre { background: #1a1a1a; padding: 12px; border-radius: 6px; font-size: 11px; overflow-x: auto; color: #00ffcc; border: 1px solid #333; margin-top: 5px; }
-    </style>
+    <meta name="theme-color" content="#101513">
+    <title>BitLibera — Lightning Desk</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <a class="brand" href="#overview" aria-label="BitLibera, accueil">
+                <span class="brand-mark">B</span><span>bitlibera<span class="brand-period">.</span></span>
+            </a>
+            <div class="workspace-label">ESPACE DE TRAVAIL</div>
+            <nav class="primary-nav" aria-label="Navigation principale">
+                <button class="nav-link active" data-view="overview"><span class="nav-icon">◫</span>Vue d’ensemble</button>
+                <button class="nav-link" data-view="receive"><span class="nav-icon">↙</span>Recevoir</button>
+                <button class="nav-link" data-view="send"><span class="nav-icon">↗</span>Envoyer</button>
+                <button class="nav-link" data-view="activity"><span class="nav-icon">≋</span>Activité</button>
+                <button class="nav-link" data-view="gateway"><span class="nav-icon">⇄</span>BitLibera</button>
+            </nav>
+            <div class="sidebar-bottom">
+                <div class="network-card">
+                    <span class="network-indicator"></span>
+                    <div><strong>Lightning Network</strong><small id="network-label">Vérification…</small></div>
+                </div>
+                <button class="profile-button" data-view="settings">
+                    <span class="profile-avatar">BL</span>
+                    <span><strong>BitLibera Lab</strong><small>Compte de démonstration</small></span>
+                    <span class="profile-menu">···</span>
+                </button>
+            </div>
+        </aside>
 
-    <div class="container">
-        <h2>⚡ Blink API Tester</h2>
+        <main class="main-area">
+            <header class="topbar">
+                <div class="breadcrumb"><span>Workspace</span><span class="breadcrumb-slash">/</span><strong id="breadcrumb-current">Vue d’ensemble</strong></div>
+                <div class="topbar-actions">
+                    <div class="mode-switch" aria-label="Mode de paiement">
+                        <button class="mode-option selected" data-mode="demo">Démo</button>
+                        <button class="mode-option" data-mode="live">Réel</button>
+                    </div>
+                    <span class="mode-dot" id="mode-indicator" title="Mode de démonstration"></span>
+                    <button class="logout-button" id="logout-button" type="button" aria-label="Se déconnecter" title="Se déconnecter">↪</button>
+                </div>
+            </header>
 
-        <!-- 1. Créer une facture -->
-        <div class="section">
-            <label>1. Générer une facture Lightning (Receive)</label>
-            <input type="number" id="invoiceAmount" placeholder="Montant en Satoshis (ex: 1000)">
-            <input type="text" id="invoiceMemo" placeholder="Mémo (ex: Café Bootcamp)">
-            <button onclick="createInvoice()">Créer la facture</button>
-        </div>
+            <div class="content-wrap">
+                <section class="view active" id="view-overview">
+                    <div class="page-heading">
+                        <div><div class="eyebrow">CENTRE DE PAIEMENT <span class="eyebrow-line"></span></div><h1>Bonjour, équipe.</h1><p>Vos flux Lightning, en un seul endroit.</p></div>
+                        <button class="button button-primary" data-view="receive"><span>＋</span> Nouvelle demande</button>
+                    </div>
+                    <div class="stats-grid">
+                        <article class="stat-block"><div class="stat-label">Volume reçu <span class="stat-period">TOTAL</span></div><div class="stat-value" id="stat-received">0 <small>sats</small></div><div class="stat-foot"><span class="stat-bullet incoming"></span>Factures réglées</div></article>
+                        <article class="stat-block"><div class="stat-label">Volume envoyé <span class="stat-period">TOTAL</span></div><div class="stat-value" id="stat-sent">0 <small>sats</small></div><div class="stat-foot"><span class="stat-bullet outgoing"></span>Paiements confirmés</div></article>
+                        <article class="stat-block"><div class="stat-label">En attente <span class="stat-period">ACTIF</span></div><div class="stat-value" id="stat-pending">0</div><div class="stat-foot"><span class="stat-bullet waiting"></span>À surveiller</div></article>
+                    </div>
 
-        <!-- 2. Vérifier le statut -->
-        <div class="section">
-            <label>2. Vérifier le statut de la facture (Polling)</label>
-            <input type="text" id="checkPaymentRequest" placeholder="Coller le paymentRequest ici...">
-            <button onclick="checkStatus()">Vérifier le statut</button>
-        </div>
+                    <div class="section-heading"><div><div class="eyebrow">RÉCENT</div><h2>Dernières opérations</h2></div><button class="text-button" data-view="activity">Tout voir <span>→</span></button></div>
+                    <div class="table-wrap"><table><thead><tr><th>OPÉRATION</th><th>DATE</th><th>DESTINATION / NOTE</th><th>MONTANT</th><th>STATUT</th></tr></thead><tbody id="recent-transactions"></tbody></table><div class="empty-state" id="recent-empty"><span class="empty-glyph">↯</span><strong>Aucune opération pour le moment</strong><span>Créez une facture de test ou envoyez un paiement.</span><button class="button button-secondary" data-view="receive">Créer une facture</button></div></div>
 
-        <!-- 3. Envoyer des sats -->
-        <div class="section">
-            <label>3. Envoyer vers une Adresse Lightning (Send)</label>
-            <input type="text" id="sendAddress" placeholder="Adresse (ex: nadvaxe@blink.sv)">
-            <input type="number" id="sendAmount" placeholder="Montant en Sats">
-            <button onclick="sendPayment()">Envoyer les Sats</button>
-        </div>
+                    <div class="quick-grid">
+                        <button class="quick-action" data-view="receive"><span class="quick-icon receive-icon">↙</span><span><strong>Recevoir des sats</strong><small>Créer une facture Lightning</small></span><span class="quick-arrow">→</span></button>
+                        <button class="quick-action" data-view="send"><span class="quick-icon send-icon">↗</span><span><strong>Envoyer des sats</strong><small>Adresse ou numéro Blink</small></span><span class="quick-arrow">→</span></button>
+                        <button class="quick-action" data-view="gateway"><span class="quick-icon gateway-icon">⇄</span><span><strong>BitLibera Gateway</strong><small>Lumicash ↔ Bitcoin</small></span><span class="quick-arrow">→</span></button>
+                    </div>
+                </section>
 
-        <!-- 4. Récupérer le Wallet ID par Username -->
-        <div class="section">
-            <label>4. Trouver le Wallet ID par Username</label>
-            <input type="text" id="blinkUsername" placeholder="Nom d'utilisateur (ex: nadvaxe)">
-            <button onclick="getWalletId()">Récupérer le Wallet ID</button>
-        </div>
+                <section class="view" id="view-receive">
+                    <div class="page-heading"><div><div class="eyebrow">LIGHTNING INVOICE <span class="eyebrow-line"></span></div><h1>Recevoir un paiement</h1><p>Créez une facture et suivez son règlement.</p></div></div>
+                    <div class="workflow-layout">
+                        <form class="form-panel" id="invoice-form">
+                            <div class="panel-heading"><span class="step-number">01</span><div><h2>Détails de la demande</h2><p>Les montants sont exprimés en satoshis.</p></div></div>
+                            <label for="invoice-amount">Montant <span class="required">*</span></label>
+                            <div class="amount-input"><input id="invoice-amount" name="amountSats" type="number" min="1" step="1" placeholder="ex. 25000" required><span>sats</span></div>
+                            <div class="amount-presets"><button type="button" data-amount="1000">1 000</button><button type="button" data-amount="5000">5 000</button><button type="button" data-amount="21000">21 000</button></div>
+                            <label for="invoice-memo">Libellé <span class="optional">OPTIONNEL</span></label>
+                            <input id="invoice-memo" name="memo" type="text" maxlength="120" placeholder="Ex. Café du matin">
+                            <button class="button button-primary button-wide" type="submit"><span>＋</span> Créer la facture</button>
+                            <p class="form-note">Aucune transaction réelle ne sera envoyée en mode démo.</p>
+                        </form>
+                        <div class="result-panel" id="invoice-result">
+                            <div class="result-placeholder"><span class="placeholder-icon">▤</span><strong>Votre facture apparaîtra ici</strong><span>Renseignez un montant pour générer une demande de paiement.</span></div>
+                        </div>
+                    </div>
+                </section>
 
-        <!-- Console de résultat -->
-        <div>
-            <label>Console de Réponse :</label>
-            <pre id="resultOutput">Prêt pour les tests...</pre>
-        </div>
+                <section class="view" id="view-send">
+                    <div class="page-heading"><div><div class="eyebrow">LIGHTNING ADDRESS <span class="eyebrow-line"></span></div><h1>Envoyer un paiement</h1><p>Payez une adresse Lightning ou un numéro Blink.</p></div></div>
+                    <div class="workflow-layout">
+                        <form class="form-panel" id="payment-form">
+                            <div class="panel-heading"><span class="step-number">01</span><div><h2>Détails du paiement</h2><p>Vérifiez le destinataire avant l’envoi.</p></div></div>
+                            <label for="payment-destination">Adresse Lightning ou téléphone <span class="required">*</span></label>
+                            <input id="payment-destination" name="destination" type="text" placeholder="satoshi@blink.sv" autocomplete="off" required>
+                            <span class="input-hint">Les numéros de téléphone sont convertis en adresse @blink.sv.</span>
+                            <label for="payment-amount">Montant <span class="required">*</span></label>
+                            <div class="amount-input"><input id="payment-amount" name="amountSats" type="number" min="1" step="1" placeholder="ex. 10000" required><span>sats</span></div>
+                            <button class="button button-primary button-wide" type="submit"><span>↗</span> Continuer</button>
+                            <p class="form-note live-warning" id="send-warning">En mode réel, ce paiement sera envoyé immédiatement et ne pourra pas être annulé.</p>
+                        </form>
+                        <div class="send-aside"><div class="aside-mark">↗</div><div class="eyebrow">PAIEMENTS INSTANTANÉS</div><h2>Rapide comme l’éclair.</h2><p>Les paiements Lightning sont généralement confirmés en quelques secondes. Utilisez le mode démo pour explorer le parcours sans déplacer de fonds.</p><div class="aside-rule"></div><div class="aside-row"><span>Réseau</span><strong>Bitcoin · Lightning</strong></div><div class="aside-row"><span>Frais réseau</span><strong>Calculés par Blink</strong></div></div>
+                    </div>
+                </section>
+
+                <section class="view" id="view-activity">
+                    <div class="page-heading"><div><div class="eyebrow">JOURNAL SQLITE <span class="eyebrow-line"></span></div><h1>Activité</h1><p>Historique local de vos opérations Blink.</p></div><button class="button button-secondary" id="refresh-activity"><span>↻</span> Actualiser</button></div>
+                    <div class="activity-toolbar"><label class="search-field"><span>⌕</span><input id="activity-search" type="search" placeholder="Rechercher une adresse ou un mémo"></label><div class="filter-group" role="group" aria-label="Filtrer les opérations"><button class="filter-option selected" data-filter="all">Tout</button><button class="filter-option" data-filter="receive">Reçus</button><button class="filter-option" data-filter="send">Envoyés</button></div></div>
+                    <div class="table-wrap activity-table-wrap"><table><thead><tr><th>OPÉRATION</th><th>DATE</th><th>DESTINATION / NOTE</th><th>MONTANT</th><th>STATUT</th><th></th></tr></thead><tbody id="activity-transactions"></tbody></table><div class="empty-state" id="activity-empty"><span class="empty-glyph">≋</span><strong>Aucun résultat</strong><span>Vos transactions apparaîtront dans ce journal.</span></div></div>
+                    <div class="storage-note"><span class="storage-dot"></span>Stockage local SQLite <span class="storage-separator">·</span> 100 opérations récentes</div>
+                </section>
+
+                <section class="view" id="view-settings">
+                    <div class="page-heading"><div><div class="eyebrow">ENVIRONNEMENT <span class="eyebrow-line"></span></div><h1>Configuration</h1><p>État de la connexion et paramètres de la démo.</p></div></div>
+                    <div class="settings-layout"><div class="settings-panel"><div class="panel-heading"><span class="step-number">01</span><div><h2>Connexion Blink</h2><p>Les secrets restent côté serveur.</p></div></div><div class="connection-row"><span class="connection-icon">↙</span><div><strong>Réception · Blink GraphQL</strong><small id="receive-config">Vérification…</small></div><span class="connection-status" id="receive-status"></span></div><div class="connection-row"><span class="connection-icon">↗</span><div><strong>Envoi · Blink GraphQL</strong><small id="send-config">Vérification…</small></div><span class="connection-status" id="send-status"></span></div><div class="connection-row"><span class="connection-icon">▦</span><div><strong>Historique · SQLite</strong><small>Base locale persistante</small></div><span class="connection-status ready"></span></div></div><div class="settings-note"><div class="eyebrow">MODE SÉCURISÉ</div><h2>Testez sans risque.</h2><p>Le mode démo est toujours disponible et n’appelle pas Blink. Pour activer les transactions réelles, ajoutez les identifiants Blink dans le fichier .env du serveur.</p><button class="button button-secondary" data-mode="demo">Revenir au mode démo</button></div></div>
+                </section>
+
+                <section class="view" id="view-gateway">
+                    <div class="page-heading">
+                        <div><div class="eyebrow">BITLIBERA GATEWAY <span class="eyebrow-line"></span></div><h1>Lumicash ↔ Bitcoin</h1><p>Convertissez des BIF avec les parcours On-Ramp et Off-Ramp de BitLibera.</p></div>
+                        <div class="gateway-mode-switch" role="group" aria-label="Mode BitLibera">
+                            <button class="gateway-mode-option selected" data-gateway-mode="demo">Démo</button>
+                            <button class="gateway-mode-option" data-gateway-mode="live">Réel</button>
+                        </div>
+                    </div>
+                    <div class="gateway-notice" id="gateway-notice"><span class="gateway-notice-dot"></span><span>Mode démo actif : aucune demande SMS, aucun débit et aucun paiement réel. Code OTP de test : <strong>123456</strong>.</span></div>
+                    <div class="gateway-grid">
+                        <form class="form-panel gateway-panel" id="onramp-form">
+                            <div class="panel-heading"><span class="step-number">01</span><div><h2>Acheter des sats</h2><p>On-Ramp · Débit Lumicash après validation OTP</p></div></div>
+                            <label for="onramp-phone">Numéro Lumicash <span class="required">*</span></label>
+                            <input id="onramp-phone" name="phone" type="tel" inputmode="tel" placeholder="+257 69 89 89 47" required>
+                            <label for="onramp-amount">Montant <span class="required">*</span></label>
+                            <div class="amount-input"><input id="onramp-amount" name="amount" type="number" min="1" step="1" placeholder="ex. 2000" required><span>BIF</span></div>
+                            <button class="button button-primary button-wide" type="submit"><span>1</span> Demander l’OTP</button>
+                            <div class="gateway-execute">
+                                <label for="onramp-order">Référence de commande</label>
+                                <input id="onramp-order" name="order_id" type="text" placeholder="Créée après la demande OTP">
+                                <label for="onramp-otp">Code OTP <span class="required">*</span></label>
+                                <input id="onramp-otp" name="otp" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6 chiffres">
+                                <button class="button button-secondary button-wide" type="button" id="execute-onramp">Valider et débiter</button>
+                            </div>
+                            <p class="form-note">En mode réel, une demande OTP sera envoyée au numéro saisi.</p>
+                        </form>
+                        <form class="form-panel gateway-panel" id="offramp-form">
+                            <div class="panel-heading"><span class="step-number">02</span><div><h2>Vendre des sats</h2><p>Off-Ramp · Facture Lightning pour recevoir des BIF</p></div></div>
+                            <label for="offramp-phone">Numéro Lumicash destinataire <span class="required">*</span></label>
+                            <input id="offramp-phone" name="recipient_phone" type="tel" inputmode="tel" placeholder="+257 69 89 89 47" required>
+                            <label for="offramp-amount">Montant à recevoir <span class="required">*</span></label>
+                            <div class="amount-input"><input id="offramp-amount" name="amount_bif" type="number" min="1" step="1" placeholder="ex. 5000" required><span>BIF</span></div>
+                            <button class="button button-primary button-wide" type="submit"><span>↙</span> Créer la facture</button>
+                            <p class="form-note">Les taux et frais sont déterminés par BitLibera en mode réel. Le mode démo ne génère pas de facture payable.</p>
+                        </form>
+                    </div>
+                    <div class="gateway-result" id="gateway-result" aria-live="polite"><strong>En attente d’une opération</strong><span>Les réponses de la passerelle apparaîtront ici.</span></div>
+                    <div class="section-heading gateway-orders-heading"><div><div class="eyebrow">SQLITE · MODE DÉMO</div><h2>Commandes de démonstration</h2></div><button class="text-button" id="refresh-gateway-orders">Actualiser <span>↻</span></button></div>
+                    <div class="table-wrap"><table class="gateway-orders-table"><thead><tr><th>OPÉRATION</th><th>DATE</th><th>TÉLÉPHONE</th><th>MONTANT</th><th>STATUT</th><th></th></tr></thead><tbody id="gateway-orders"></tbody></table><div class="empty-state" id="gateway-orders-empty"><span class="empty-glyph">⇄</span><strong>Aucune commande BitLibera</strong><span>Essayez l’On-Ramp ou l’Off-Ramp en mode démo.</span></div></div>
+                </section>
+            </div>
+            <footer class="app-footer"><span>BITLIBERA <span class="footer-separator">/</span> LIGHTNING DESK</span><span id="footer-mode">MODE DÉMO</span></footer>
+        </main>
     </div>
-
-    <script>
-        async function createInvoice() {
-            const amountSats = document.getElementById('invoiceAmount').value;
-            const memo = document.getElementById('invoiceMemo').value;
-            
-            const res = await fetch('/api/blink/create-invoice', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amountSats, memo })
-            });
-            const data = await res.json();
-            document.getElementById('resultOutput').innerText = JSON.stringify(data, null, 2);
-            
-            if(data.success) {
-                document.getElementById('checkPaymentRequest').value = data.paymentRequest;
-            }
-        }
-
-        async function checkStatus() {
-            const paymentRequest = document.getElementById('checkPaymentRequest').value;
-            
-            const res = await fetch('/api/blink/check-status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ paymentRequest })
-            });
-            const data = await res.json();
-            document.getElementById('resultOutput').innerText = JSON.stringify(data, null, 2);
-        }
-
-        async function sendPayment() {
-            const lnAddress = document.getElementById('sendAddress').value;
-            const amountSats = document.getElementById('sendAmount').value;
-            
-            const res = await fetch('/api/blink/send-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lnAddress, amountSats })
-            });
-            const data = await res.json();
-            document.getElementById('resultOutput').innerText = JSON.stringify(data, null, 2);
-        }
-
-        async function getWalletId() {
-            const username = document.getElementById('blinkUsername').value;
-            
-            const res = await fetch('/api/blink/get-wallet', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username })
-            });
-            const data = await res.json();
-            document.getElementById('resultOutput').innerText = JSON.stringify(data, null, 2);
-        }
-    </script>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="/app.js" defer></script>
 </body>
 </html>
